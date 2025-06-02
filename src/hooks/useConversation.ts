@@ -127,8 +127,8 @@ export const useConversation = (config: ConversationConfig) => {
       // Stop any playing audio before starting new interaction
       audioPlayer.stopAudio();
       
-      // If waiting for click to stop recording
-      if (state.isWaitingForClick) {
+      // If already recording and button is clicked again, stop recording and send
+      if (state.voiceState.status === 'recording' && state.isWaitingForClick) {
         await stopRecordingAndSend();
         return;
       }

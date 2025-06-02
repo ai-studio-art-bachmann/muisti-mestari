@@ -84,11 +84,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-fade': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.3' }
+				},
+				'recording-pulse': {
+					'0%': { opacity: '1', transform: 'scale(1)' },
+					'50%': { opacity: '0.5', transform: 'scale(0.98)' },
+					'100%': { opacity: '1', transform: 'scale(1)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'slow-pulse': 'pulse-fade 2s ease-in-out infinite',
+				'recording-pulse': 'recording-pulse 4.5s ease-in-out infinite'
 			}
 		}
 	},

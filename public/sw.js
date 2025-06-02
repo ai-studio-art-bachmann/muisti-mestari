@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tyokalu-app-v4';  // Updated version
+const CACHE_NAME = 'muistimestari-app-v1';  // New app name and reset version
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',

@@ -45,19 +45,19 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Main Content Area - Evenly distributed */}
+      {/* Main Content Area - Fixed layout */}
       <div className="flex-1 max-w-4xl mx-auto w-full flex flex-col px-4" 
-           style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
-        {/* Messages Panel */}
-        <div style={{ flex: '1 1 auto', margin: '0 0 10px 0' }}>
+           style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 180px)' }}>
+        {/* Messages Panel - Fixed height with scroll */}
+        <div style={{ margin: '0 0 10px 0', height: '40vh' }}>
           <DynamicResponsePanel 
             messages={messages}
             language={config.language}
           />
         </div>
 
-        {/* Interaction Panel */}
-        <div style={{ flex: '0 0 auto', margin: '10px 0' }}>
+        {/* Interaction Panel - Fixed at bottom */}
+        <div style={{ margin: '10px 0' }}>
           <InteractionPanel
             voiceState={voiceState}
             onVoiceInteraction={handleVoiceInteraction}

@@ -68,12 +68,31 @@ export interface Translations {
   selectedFile: string;
   fileSent: string;
   fileSentSuccess: string;
+  
+  // Thought management
+  addThought: string;
+  searchThoughts: string;
+  thoughtTitle: string;
+  thoughtContent: string;
+  thoughtTags: string;
+  saveThought: string;
+  deleteThought: string;
+  noThoughts: string;
+  noMatchingThoughts: string;
+  addNewThought: string;
+  thoughtDescription: string;
+  searchDescription: string;
+  tagsLabel: string;
+  titlePlaceholder: string;
+  contentPlaceholder: string;
+  tagsPlaceholder: string;
+  searchPlaceholder: string;
 }
 
 export const translations: Record<'fi' | 'et' | 'en', Translations> = {
   fi: {
-    headerTitle: 'Älykästä apua työmaalle!',
-    headerSubtitle: 'Ääniohjattu työkalu rakennustyömaalle',
+    headerTitle: 'MuistiMestari',
+    headerSubtitle: 'Tallentaa ajatuksesi, auttaa analysoimaan ja muistamaan',
     startConversation: 'Aloita keskustelu',
     greetingInProgress: 'Tervehdys käynnissä...',
     listening: 'Kuuntelen...',
@@ -126,11 +145,30 @@ export const translations: Record<'fi' | 'et' | 'en', Translations> = {
     orClickToUpload: 'tai klikkaa valitaksesi',
     selectedFile: 'Valittu tiedosto',
     fileSent: 'Tiedosto lähetetty',
-    fileSentSuccess: 'Tiedosto lähetetty onnistuneesti'
+    fileSentSuccess: 'Tiedosto lähetetty onnistuneesti',
+    
+    // Thought management
+    addThought: 'Lisää ajatus',
+    searchThoughts: 'Etsi ajatuksia',
+    thoughtTitle: 'Otsikko',
+    thoughtContent: 'Sisältö',
+    thoughtTags: 'Tagit',
+    saveThought: 'Tallenna ajatus',
+    deleteThought: 'Poista',
+    noThoughts: 'Ei tallennettuja ajatuksia',
+    noMatchingThoughts: 'Ei vastaavia ajatuksia',
+    addNewThought: 'Lisää uusi ajatus',
+    thoughtDescription: 'Tallenna ideoitasi, muistiinpanojasi tai mitä tahansa haluat muistaa',
+    searchDescription: 'Etsi tallennettuja ajatuksiasi otsikon, sisällön tai tagien perusteella',
+    tagsLabel: 'Tagit (pilkulla erotettuna)',
+    titlePlaceholder: 'Anna ajatuksellesi otsikko',
+    contentPlaceholder: 'Kirjoita ajatuksesi tähän...',
+    tagsPlaceholder: 'työ, idea, tehtävä',
+    searchPlaceholder: 'Etsi ajatuksia...'
   },
   et: {
-    headerTitle: 'Nutikas abi ehitusplatsile!',
-    headerSubtitle: 'Häälega juhitav tööriist ehitusplatsile',
+    headerTitle: 'MuistiMestari',
+    headerSubtitle: 'Salvestab sinu mõtteid, aitab analüüsida ja mäletada',
     startConversation: 'Alusta vestlust',
     greetingInProgress: 'Tervitus käib...',
     listening: 'Kuulan...',
@@ -183,11 +221,30 @@ export const translations: Record<'fi' | 'et' | 'en', Translations> = {
     orClickToUpload: 'või klõpsa valimiseks',
     selectedFile: 'Valitud fail',
     fileSent: 'Fail saadetud',
-    fileSentSuccess: 'Fail edukalt saadetud'
+    fileSentSuccess: 'Fail edukalt saadetud',
+    
+    // Thought management
+    addThought: 'Lisa mõte',
+    searchThoughts: 'Otsi mõtteid',
+    thoughtTitle: 'Pealkiri',
+    thoughtContent: 'Sisu',
+    thoughtTags: 'Sildid',
+    saveThought: 'Salvesta mõte',
+    deleteThought: 'Kustuta',
+    noThoughts: 'Salvestatud mõtteid pole',
+    noMatchingThoughts: 'Vastavaid mõtteid ei leitud',
+    addNewThought: 'Lisa uus mõte',
+    thoughtDescription: 'Salvesta oma ideid, märkmeid või mida iganes soovid meeles pidada',
+    searchDescription: 'Otsi oma salvestatud mõtteid pealkirja, sisu või siltide järgi',
+    tagsLabel: 'Sildid (komadega eraldatud)',
+    titlePlaceholder: 'Anna oma mõttele pealkiri',
+    contentPlaceholder: 'Kirjuta oma mõte siia...',
+    tagsPlaceholder: 'töö, idee, ülesanne',
+    searchPlaceholder: 'Otsi mõtteid...'
   },
   en: {
-    headerTitle: 'Smart help for construction sites!',
-    headerSubtitle: 'Voice-controlled tool for construction sites',
+    headerTitle: 'MuistiMestari',
+    headerSubtitle: 'Saves your thoughts, helps analyze and remember',
     startConversation: 'Start conversation',
     greetingInProgress: 'Greeting in progress...',
     listening: 'Listening...',
@@ -240,7 +297,26 @@ export const translations: Record<'fi' | 'et' | 'en', Translations> = {
     orClickToUpload: 'or click to upload',
     selectedFile: 'Selected file',
     fileSent: 'File sent',
-    fileSentSuccess: 'File sent successfully'
+    fileSentSuccess: 'File successfully sent',
+    
+    // Thought management
+    addThought: 'Add Thought',
+    searchThoughts: 'Search Thoughts',
+    thoughtTitle: 'Title',
+    thoughtContent: 'Content',
+    thoughtTags: 'Tags',
+    saveThought: 'Save Thought',
+    deleteThought: 'Delete',
+    noThoughts: 'No thoughts saved yet',
+    noMatchingThoughts: 'No matching thoughts found',
+    addNewThought: 'Add New Thought',
+    thoughtDescription: 'Record your ideas, notes, or anything you want to remember',
+    searchDescription: 'Find your saved thoughts by title, content, or tags',
+    tagsLabel: 'Tags (comma separated)',
+    titlePlaceholder: 'Give your thought a title',
+    contentPlaceholder: 'Write your thought here...',
+    tagsPlaceholder: 'work, idea, todo',
+    searchPlaceholder: 'Search thoughts...'
   }
 };
 

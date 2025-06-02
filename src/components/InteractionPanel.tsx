@@ -72,15 +72,15 @@ export const InteractionPanel: React.FC<InteractionPanelProps> = ({
   }, [activeTab]);
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg mt-2 mb-4">
+    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg">
       <TabSelector 
         currentTab={activeTab} 
         onTabChange={handleTabChange} 
         language={language} 
       />
       
-      <div className="p-2 sm:p-3">
-        <div className="flex flex-col items-center space-y-2">
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col items-center space-y-3 sm:space-y-4">
           {activeTab === 'audio' && (
             <>
               <VoiceButton

@@ -1,12 +1,12 @@
 
 {
-  "name": "Työkalu App - Työmiehen paras kaveri",
-  "short_name": "Työkalu App",
-  "description": "Ääniohjattu avustaja rakennustyömaan työntekijöille",
+  "name": "MuistiMestari App - Muistamisen mestari",
+  "short_name": "MuistiMestari App",
+  "description": "Ääniohjattu muistiavustaja jokaiseen tilanteeseen",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fff7ed",
-  "theme_color": "#ea580c",
+  "theme_color": "#08465e",
   "orientation": "portrait",
   "scope": "/",
   "lang": "fi",

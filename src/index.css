@@ -9,6 +9,10 @@
   100% { opacity: 1; }
 }
 
+.recording-animation {
+  animation: fadeInOut 10s ease-in-out infinite;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

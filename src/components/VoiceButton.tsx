@@ -91,11 +91,9 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
           'w-24 h-24 sm:w-28 sm:h-28 rounded-full transition-all duration-200 relative',
           buttonState.color,
           buttonState.pulse && voiceState.status !== 'recording' && 'animate-slow-pulse',
+          voiceState.status === 'recording' && 'recording-animation',
           isDisabled && 'opacity-70 cursor-not-allowed'
         )}
-        style={voiceState.status === 'recording' ? {
-          animation: 'fadeInOut 10s ease-in-out infinite'
-        } : undefined}
       >
         <div style={{ position: 'absolute', top: '5%', left: '5%', width: '90%', height: '90%' }}>
           {/* Single large microphone icon */}

@@ -1,11 +1,13 @@
 
 {
-  "name": "MuistiMestari App - Muistamisen mestari",
-  "short_name": "MuistiMestari App",
+  "name": "MuistiMestari",
+  "short_name": "MuistiMestari",
   "description": "Ääniohjattu muistiavustaja jokaiseen tilanteeseen",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
-  "background_color": "#fff7ed",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#ffffff",
   "theme_color": "#08465e",
   "orientation": "portrait",
   "scope": "/",

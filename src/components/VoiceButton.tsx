@@ -79,8 +79,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 }) => {
   const t = getTranslations(language);
   const buttonState = getButtonState(voiceState.status, isWaitingForClick, t);
-  // Only disable the button when not in idle, recording, or waiting for click states
-  const isDisabled = disabled || (voiceState.status !== 'idle' && voiceState.status !== 'recording' && !isWaitingForClick);
+  // Only disable the button when not in idle or waiting for click states
+  const isDisabled = disabled || (voiceState.status !== 'idle' && !isWaitingForClick);
 
   return (
     <div className="flex flex-col items-center space-y-2 sm:space-y-3">
@@ -90,8 +90,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
         className={cn(
           'w-24 h-24 sm:w-28 sm:h-28 rounded-full transition-all duration-200 relative',
           buttonState.color,
-          buttonState.pulse && voiceState.status !== 'recording' && 'animate-slow-pulse',
-          voiceState.status === 'recording' && 'recording-animation',
+          buttonState.pulse && 'animate-slow-pulse',
           isDisabled && 'opacity-70 cursor-not-allowed'
         )}
       >

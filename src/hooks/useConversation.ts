@@ -44,13 +44,17 @@ export const useConversation = (config: ConversationConfig) => {
 
   const stopRecordingAndSend = useCallback(async () => {
     try {
+      console.log('stopRecordingAndSend called');
       // Stop any playing audio before processing new request
       audioPlayer.stopAudio();
       
+      // Update state BEFORE trying to stop recording
       state.setVoiceState(prev => ({ ...prev, status: 'sending', isRecording: false }));
       state.setIsWaitingForClick(false);
       addSystemMessage(t.stopRecording);
       
+      // Do not call cleanup before stopRecording as it will clear the recorded audio chunks
+      console.log('Calling stopRecording to get audio data');
       const audioBlob = await microphone.stopRecording();
       
       if (audioBlob.size === 0) {
@@ -127,8 +131,12 @@ export const useConversation = (config: ConversationConfig) => {
       // Stop any playing audio before starting new interaction
       audioPlayer.stopAudio();
       
-      // If already recording and button is clicked again, stop recording and send
-      if (state.voiceState.status === 'recording' && state.isWaitingForClick) {
+      console.log('Voice interaction: current status =', state.voiceState.status, 'isWaitingForClick =', state.isWaitingForClick);
+      
+      // If already recording, stop and send regardless of isWaitingForClick state
+      // This ensures we can always stop recording when needed
+      if (state.voiceState.status === 'recording' || microphone.isRecording) {
+        console.log('Stopping recording and sending audio');
         await stopRecordingAndSend();
         return;
       }

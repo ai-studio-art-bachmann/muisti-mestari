@@ -105,23 +105,28 @@ const setupUpdateHandling = (registration, preferences) => {
 const handleNewServiceWorker = (worker, preferences) => {
   // If user has opted for auto-updates, apply the update silently
   if (preferences.autoUpdate) {
-    console.log('Auto-updating based on user preferences');
+    console.log('PWA_UPDATE: Auto-updating based on user preferences.');
     applyUpdate(worker);
     return;
   }
-  
+
   // Check if we should show the notification based on last check time
   if (!shouldShowUpdateNotification()) {
-    console.log('Skipping update notification based on previous decision');
+    console.log('PWA_UPDATE: Skipping update notification based on previous decision or frequency.');
     return;
   }
-  
-  // Show update notification
-  console.log('New version available!');
-  
-  // Create custom update notification instead of using window.confirm
+
+  // Prevent duplicate popups
+  if (document.getElementById('update-notification')) {
+    console.log('PWA_UPDATE: Update notification already visible. Skipping creation.');
+    return;
+  }
+
+  console.log('PWA_UPDATE: New version available! Creating update notification.');
+
   const updateContainer = document.createElement('div');
   updateContainer.id = 'update-notification';
+  // ... (styling for updateContainer remains the same)
   updateContainer.style.position = 'fixed';
   updateContainer.style.top = '20px';
   updateContainer.style.left = '50%';
@@ -134,7 +139,7 @@ const handleNewServiceWorker = (worker, preferences) => {
   updateContainer.style.maxWidth = '90%';
   updateContainer.style.width = '320px';
   updateContainer.style.textAlign = 'center';
-  
+
   updateContainer.innerHTML = `
     <p style="margin: 0 0 16px 0; font-weight: bold;">Uusi versio saatavilla. Päivitä nyt?</p>
     <div style="display: flex; justify-content: space-between;">
@@ -146,36 +151,56 @@ const handleNewServiceWorker = (worker, preferences) => {
       Päivitä automaattisesti jatkossa
     </label>
   `;
-  
+
   document.body.appendChild(updateContainer);
-  
-  // Update now button
-  document.getElementById('update-now')?.addEventListener('click', () => {
-    // Save preference
-    const checkbox = document.getElementById('auto-update-checkbox') as HTMLInputElement;
-    const autoUpdate = checkbox ? checkbox.checked : false;
-    saveUpdatePreferences({ autoUpdate, lastDecision: 'accepted' });
-    
-    // Remove notification
-    document.body.removeChild(updateContainer);
-    
-    // Apply update
-    applyUpdate(worker);
-  });
-  
-  // Update later button
-  document.getElementById('update-later')?.addEventListener('click', () => {
-    // Save preference
-    const checkbox = document.getElementById('auto-update-checkbox') as HTMLInputElement;
-    const autoUpdate = checkbox ? checkbox.checked : false;
-    saveUpdatePreferences({ autoUpdate, lastDecision: 'declined' });
-    
-    // Update last check time
-    updateLastCheckTime();
-    
-    // Remove notification
-    document.body.removeChild(updateContainer);
-  });
+  console.log('PWA_UPDATE: Update notification appended to body.');
+
+  // Get buttons and checkbox from within the created container for reliability
+  const updateNowButton = updateContainer.querySelector('#update-now') as HTMLButtonElement | null;
+  const updateLaterButton = updateContainer.querySelector('#update-later') as HTMLButtonElement | null;
+  const autoUpdateCheckbox = updateContainer.querySelector('#auto-update-checkbox') as HTMLInputElement | null;
+
+  if (updateNowButton) {
+    updateNowButton.addEventListener('click', () => {
+      console.log('PWA_UPDATE: "Päivitä nyt" button clicked.');
+      try {
+        const autoUpdate = autoUpdateCheckbox ? autoUpdateCheckbox.checked : false;
+        saveUpdatePreferences({ autoUpdate, lastDecision: 'accepted' });
+        console.log('PWA_UPDATE: Preferences saved (accepted, autoUpdate:', autoUpdate, ')');
+        applyUpdate(worker);
+      } catch (error) {
+        console.error('PWA_UPDATE: Error in "Päivitä nyt" click handler:', error);
+      } finally {
+        if (updateContainer.parentNode === document.body) {
+          document.body.removeChild(updateContainer);
+          console.log('PWA_UPDATE: Notification removed via "Päivitä nyt" finally block.');
+        }
+      }
+    });
+  } else {
+    console.error('PWA_UPDATE: "Päivitä nyt" button not found in notification DOM.');
+  }
+
+  if (updateLaterButton) {
+    updateLaterButton.addEventListener('click', () => {
+      console.log('PWA_UPDATE: "Myöhemmin" button clicked.');
+      try {
+        const autoUpdate = autoUpdateCheckbox ? autoUpdateCheckbox.checked : false;
+        saveUpdatePreferences({ autoUpdate, lastDecision: 'declined' });
+        updateLastCheckTime();
+        console.log('PWA_UPDATE: Preferences saved (declined, autoUpdate:', autoUpdate, '), last check time updated.');
+      } catch (error) {
+        console.error('PWA_UPDATE: Error in "Myöhemmin" click handler:', error);
+      } finally {
+        if (updateContainer.parentNode === document.body) {
+          document.body.removeChild(updateContainer);
+          console.log('PWA_UPDATE: Notification removed via "Myöhemmin" finally block.');
+        }
+      }
+    });
+  } else {
+    console.error('PWA_UPDATE: "Myöhemmin" button not found in notification DOM.');
+  }
 };
 
 // Apply the update by sending SKIP_WAITING to the service worker

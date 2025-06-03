@@ -53,11 +53,27 @@ export const useConversation = (config: ConversationConfig) => {
       state.setIsWaitingForClick(false);
       addSystemMessage(t.stopRecording);
       
-      // Do not call cleanup before stopRecording as it will clear the recorded audio chunks
-      console.log('Calling stopRecording to get audio data');
-      const audioBlob = await microphone.stopRecording();
+      // Create a timeout to ensure we don't get stuck if recording fails to stop
+      const recordingPromise = microphone.stopRecording();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Recording stop timeout')), 5000);
+      });
       
-      if (audioBlob.size === 0) {
+      // Race between normal recording stop and timeout
+      let audioBlob;
+      try {
+        console.log('Waiting for recording to stop...');
+        audioBlob = await Promise.race([recordingPromise, timeoutPromise]);
+        console.log('Recording stopped successfully');
+      } catch (error) {
+        console.error('Error or timeout stopping recording:', error);
+        // Force cleanup and try to continue with any available audio
+        microphone.cleanup();
+        throw new Error(t.recordingFailed);
+      }
+      
+      if (!audioBlob || audioBlob.size === 0) {
+        console.warn('Empty audio blob received');
         throw new Error(t.recordingFailed);
       }
       
@@ -68,7 +84,13 @@ export const useConversation = (config: ConversationConfig) => {
       state.setVoiceState(prev => ({ ...prev, status: 'waiting' }));
       addSystemMessage(t.sendingToServer);
 
-      const responseData = await webhookService.sendAudioToWebhook(audioBlob, config.webhookUrl);
+      // Add timeout to webhook call too
+      const webhookPromise = webhookService.sendAudioToWebhook(audioBlob, config.webhookUrl);
+      const webhookTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Webhook timeout')), 20000);
+      });
+      
+      const responseData = await Promise.race([webhookPromise, webhookTimeoutPromise]);
 
       state.setVoiceState(prev => ({ ...prev, status: 'playing', isPlaying: true }));
       addSystemMessage(t.processingResponse);

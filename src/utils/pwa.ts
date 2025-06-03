@@ -196,185 +196,72 @@ const applyUpdate = (worker) => {
 };
 
 export const showInstallPrompt = () => {
-  // Store the deferredPrompt at module level to prevent garbage collection
+  // Simple global variable to track the install prompt
   let deferredPrompt: any = null;
-  let installButtonAttached = false;
-  let checkInstalledIntervalId: number | null = null;
   
-  // Detect iOS device (which has different install behavior)
-  const isIOS = () => {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-  };
+  // Get the install button once
+  const installButton = document.getElementById('install-button');
+  if (!installButton) return;
   
-  // More robust detection of standalone mode across browsers
-  const isInStandaloneMode = () => {
-    return (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.matchMedia('(display-mode: fullscreen)').matches ||
-      window.matchMedia('(display-mode: minimal-ui)').matches ||
-      (window.navigator as any).standalone === true // iOS Safari
-    );
-  };
+  // Hide button by default
+  installButton.style.display = 'none';
   
-  // Track installation state in localStorage to prevent flickering
-  const isAppInstalled = () => {
-    try {
-      return (
-        localStorage.getItem('app_installed') === 'true' ||
-        isInStandaloneMode() ||
-        document.referrer.includes('android-app://')
-      );
-    } catch {
-      return false;
-    }
-  };
-  
-  // Setup button visibility with iOS-specific handling
-  const setupInstallButton = () => {
-    const installButton = document.getElementById('install-button');
-    if (!installButton) return;
-    
-    // Don't show install button if already installed
-    if (isAppInstalled()) {
-      console.log('App appears to be installed, hiding install button');
-      installButton.style.display = 'none';
-      // Stop checking for installed status if we detect it's installed
-      if (checkInstalledIntervalId) {
-        window.clearInterval(checkInstalledIntervalId);
-        checkInstalledIntervalId = null;
-      }
-      return;
-    }
-    
-    // Special case for iOS which doesn't support beforeinstallprompt
-    if (isIOS()) {
-      console.log('iOS device detected, showing iOS install instructions');
-      installButton.style.display = 'block';
-      
-      // For iOS, change button to show special instructions
-      if (!installButtonAttached) {
-        installButtonAttached = true;
-        installButton.addEventListener('click', () => {
-          // Either show a modal with iOS install instructions or change button text
-          alert('Asenna sovellus napauttamalla Jaa-kuvaketta ja valitsemalla "Lisää Koti-näyttöön"');
-        });
-      }
-      return;
-    }
-    
-    // For other platforms that support beforeinstallprompt
-    if (deferredPrompt) {
-      console.log('Install prompt available, showing install button');
-      installButton.style.display = 'block';
-      
-      // Only attach listener once to prevent multiple handlers
-      if (!installButtonAttached) {
-        installButtonAttached = true;
-        installButton.addEventListener('click', handleInstallClick);
-      }
-    } else {
-      // Hide if no prompt available
-      installButton.style.display = 'none';
-    }
-  };
-  
-  // Handle installation click
-  const handleInstallClick = async () => {
-    const installButton = document.getElementById('install-button');
-    if (!deferredPrompt || !installButton) return;
-    
-    // Disable button during prompt to prevent multiple clicks
-    installButton.setAttribute('disabled', 'true');
-    installButton.textContent = 'Asennetaan...';
-    
-    try {
-      // Log for debugging
-      console.log('Showing install prompt to user');
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
-      
-      if (outcome === 'accepted') {
-        localStorage.setItem('app_installed', 'true');
-        installButton.style.display = 'none';
-        
-        // Ensure we refresh display state after installation
-        setTimeout(() => {
-          if (isInStandaloneMode()) {
-            // If now in standalone mode, might want to reload for full PWA experience
-            window.location.reload();
-          }
-        }, 1000);
-      } else {
-        // Re-enable button if declined
-        installButton.removeAttribute('disabled');
-        installButton.textContent = 'Asenna sovellus';
-      }
-    } catch (err) {
-      console.error('Installation prompt error:', err);
-      installButton.removeAttribute('disabled');
-      installButton.textContent = 'Asenna sovellus';
-    }
-    
-    deferredPrompt = null;
-  };
-  
-  // Periodically check if app has been installed
-  // This helps catch cases where the appinstalled event might not fire
-  const startInstalledCheck = () => {
-    if (checkInstalledIntervalId) return; // Already running
-    
-    checkInstalledIntervalId = window.setInterval(() => {
-      if (isAppInstalled()) {
-        console.log('App installation detected by interval check');
-        const installButton = document.getElementById('install-button');
-        if (installButton) installButton.style.display = 'none';
-        
-        // Stop checking once installed
-        if (checkInstalledIntervalId) {
-          window.clearInterval(checkInstalledIntervalId);
-          checkInstalledIntervalId = null;
-        }
-      }
-    }, 2000) as unknown as number;
-  };
-  
-  // Check installed status when page loads
-  if (isAppInstalled()) {
-    console.log('App already installed on page load');
-  } else {
-    // Start checking periodically
-    startInstalledCheck();
+  // Simple check if already installed
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone) {
+    console.log('App is already in standalone mode');
+    return; // Exit early if already installed
   }
   
-  // Initial setup
-  setupInstallButton();
-  
-  // Listen for beforeinstallprompt event
+  // Listen for install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('beforeinstallprompt event fired');
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
+    
+    // Store the event for later use
     deferredPrompt = e;
     
-    // Setup button when prompt is available
-    setupInstallButton();
-  });
-
-  // Monitor display mode changes
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-    console.log('Display mode changed, matches standalone:', e.matches);
-    if (e.matches) {
-      localStorage.setItem('app_installed', 'true');
+    // Show the button
+    if (installButton) {
+      installButton.style.display = 'block';
     }
-    setupInstallButton();
   });
-
-  window.addEventListener('appinstalled', (e) => {
-    console.log('PWA was installed', e);
-    localStorage.setItem('app_installed', 'true');
+  
+  // Set up click handler if button exists
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      
+      // Disable button during prompt
+      installButton.setAttribute('disabled', 'true');
+      
+      // Show the prompt
+      deferredPrompt.prompt();
+      
+      // Wait for user choice
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response: ${outcome}`);
+      
+      // Reset the button
+      installButton.removeAttribute('disabled');
+      
+      if (outcome === 'accepted') {
+        // Hide button after installation
+        installButton.style.display = 'none';
+      }
+      
+      // Clear the prompt
+      deferredPrompt = null;
+    });
+  }
+  
+  // Hide button when app is installed
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    if (installButton) {
+      installButton.style.display = 'none';
+    }
     deferredPrompt = null;
-    setupInstallButton();
   });
 };
 

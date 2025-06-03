@@ -9,16 +9,25 @@ export const useMicrophone = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  // Helper to detect mobile browsers
+  const isMobileBrowser = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
   const requestPermission = useCallback(async () => {
     try {
-      // Use proper audio constraints to ensure good voice quality
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      // Use different audio constraints based on platform for better compatibility
+      const audioConstraints = isMobileBrowser() 
+        ? { audio: true } // Simpler constraints for mobile
+        : { audio: { // More detailed for desktop
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        };
+      
+      console.log('Using audio constraints:', audioConstraints);
+      const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
       setHasPermission(true);
       return stream;
     } catch (error) {
@@ -39,22 +48,45 @@ export const useMicrophone = () => {
       streamRef.current = stream;
       chunksRef.current = [];
 
-      // Try to use the most compatible audio format
-      let mediaRecorder;
-      if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'audio/webm'
-        });
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'audio/mp4'
-        });
-      } else {
-        // Fall back to browser default
-        mediaRecorder = new MediaRecorder(stream);
+          // Determine the best supported MIME type based on device and browser
+      // Different browsers and platforms have different audio format support
+      let mimeType = '';
+      const supportedTypes = [
+        'audio/webm', 
+        'audio/webm;codecs=opus',
+        'audio/mp4', 
+        'audio/mp4;codecs=mp4a.40.5',
+        'audio/mpeg', 
+        'audio/ogg;codecs=opus',
+        'audio/wav'
+      ];
+      
+      // Find the first supported type
+      for (const type of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
       }
       
-      console.log('MediaRecorder created with mimeType:', mediaRecorder.mimeType);
+      let mediaRecorder;
+      try {
+        // Create recorder with the supported mime type if found
+        if (mimeType) {
+          console.log(`Using supported MIME type: ${mimeType}`);
+          mediaRecorder = new MediaRecorder(stream, { mimeType });
+        } else {
+          // Fall back to browser default if no explicitly supported type found
+          console.log('No explicitly supported MIME type found, using browser default');
+          mediaRecorder = new MediaRecorder(stream);
+        }
+        
+        console.log('MediaRecorder created with mimeType:', mediaRecorder.mimeType);
+      } catch (err) {
+        console.error('Error creating MediaRecorder with selected MIME type, using default:', err);
+        // Final fallback - use default constructor with no options
+        mediaRecorder = new MediaRecorder(stream);
+      }
       
       mediaRecorderRef.current = mediaRecorder;
 
@@ -80,56 +112,71 @@ export const useMicrophone = () => {
       console.log('Stop recording called');
       const mediaRecorder = mediaRecorderRef.current;
       
+      // Helper function to create audio blob from chunks
+      const getAudioBlobFromChunks = () => {
+        const mimeType = mediaRecorder?.mimeType || 'audio/webm';
+        console.log(`Creating blob from ${chunksRef.current.length} chunks with type ${mimeType}`);
+        return new Blob(chunksRef.current, { type: mimeType });
+      };
+      
       // If there's no active recording, return an empty blob to allow the workflow to continue
       if (!mediaRecorder || mediaRecorder.state !== 'recording') {
         console.warn('No active recording to stop or recorder in invalid state');
-        // Create an empty audio blob to prevent errors downstream
-        const emptyBlob = new Blob([], { type: 'audio/webm' });
-        setIsRecording(false);
-        resolve(emptyBlob);
+        // Try to use any chunks we might have collected
+        if (chunksRef.current.length > 0) {
+          console.log('Found audio chunks despite recorder state, using them');
+          const audioBlob = getAudioBlobFromChunks();
+          setIsRecording(false);
+          resolve(audioBlob);
+        } else {
+          // Create an empty audio blob to prevent errors downstream
+          const emptyBlob = new Blob([], { type: 'audio/webm' });
+          setIsRecording(false);
+          resolve(emptyBlob);
+        }
         return;
       }
 
-      // Set a timeout to ensure we don't get stuck waiting for onstop
       const timeoutId = setTimeout(() => {
-        console.warn('MediaRecorder.onstop timed out after 3 seconds');
-        // Cleanup manually since onstop didn't fire
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-        
-        setIsRecording(false);
-        // Create a blob from whatever chunks we have
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        console.log('MediaRecorder.onstop did not fire within timeout, forcing cleanup');
+        const audioBlob = getAudioBlobFromChunks();
+        cleanup();
         resolve(audioBlob);
-      }, 3000);
+      }, 2000); // Reduced timeout for mobile
 
       mediaRecorder.onstop = () => {
-        console.log('MediaRecorder onstop fired, chunks:', chunksRef.current.length);
+        console.log('MediaRecorder.onstop fired');
         clearTimeout(timeoutId);
-        
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        console.log('Audio blob created, size:', audioBlob.size);
-        
-        // Cleanup
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-        
-        setIsRecording(false);
+        const audioBlob = getAudioBlobFromChunks();
+        console.log(`Created audio blob of size ${audioBlob.size} bytes and type ${audioBlob.type}`);
+        cleanup();
         resolve(audioBlob);
       };
 
-      mediaRecorder.onerror = (event) => {
-        console.error('MediaRecorder error:', event);
+      mediaRecorder.onerror = (error) => {
+        console.error('MediaRecorder error during stop:', error);
         clearTimeout(timeoutId);
-        reject(event.error);
+        // Still try to create a blob from any chunks we have
+        const audioBlob = getAudioBlobFromChunks();
+        cleanup();
+        if (audioBlob.size > 0) {
+          console.log('Despite error, we have audio data to return');
+          resolve(audioBlob);
+        } else {
+          reject(error);
+        }
       };
-      
-      console.log('Calling mediaRecorder.stop()');
-      mediaRecorder.stop();
+
+      console.log('Stopping MediaRecorder...');
+      try {
+        mediaRecorder.stop();
+      } catch (e) {
+        console.error('Error stopping MediaRecorder, forcing cleanup', e);
+        clearTimeout(timeoutId);
+        const audioBlob = getAudioBlobFromChunks();
+        cleanup();
+        resolve(audioBlob);
+      }
     });
   }, []);
 

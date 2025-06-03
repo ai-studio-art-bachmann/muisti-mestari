@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { DynamicResponsePanel } from '@/components/DynamicResponsePanel';
 import { InteractionPanel } from '@/components/InteractionPanel';
 import { useConversation } from '@/hooks/useConversation';
 import { ConversationConfig } from '@/types/voice';
 import { getTranslations } from '@/utils/translations';
+import { registerServiceWorker, showInstallPrompt } from '@/utils/pwa'; // Added PWA imports
 
 const Index = () => {
+  // PWA Initialization Effect
+  useEffect(() => {
+    console.log('PWA_APP: Initializing PWA features...');
+    registerServiceWorker(); // Register the service worker
+    showInstallPrompt();     // Initialize the install prompt logic
+    console.log('PWA_APP: PWA features initialization called.');
+  }, []); // Empty dependency array ensures this runs only once on mount
+
   const [config, setConfig] = useState<ConversationConfig>({
     language: 'fi',
     webhookUrl: 'https://n8n.artbachmann.eu/webhook/my-memory'

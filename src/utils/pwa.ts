@@ -195,74 +195,104 @@ const applyUpdate = (worker) => {
   worker.postMessage({ type: 'SKIP_WAITING' });
 };
 
+// Module-level variable to store the deferred prompt event
+let deferredInstallPromptEvent: any = null;
+// Flag to ensure event listeners are set up only once
+let installPromptListenersAttached = false;
+
 export const showInstallPrompt = () => {
-  // Simple global variable to track the install prompt
-  let deferredPrompt: any = null;
-  
-  // Get the install button once
   const installButton = document.getElementById('install-button');
-  if (!installButton) return;
-  
-  // Hide button by default
-  installButton.style.display = 'none';
-  
-  // Simple check if already installed
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  if (isStandalone) {
-    console.log('App is already in standalone mode');
-    return; // Exit early if already installed
+
+  if (!installButton) {
+    console.warn('PWA install button not found (ID: install-button). Cannot initialize install prompt.');
+    return;
   }
-  
-  // Listen for install prompt
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent the mini-infobar from appearing on mobile
-    e.preventDefault();
-    
-    // Store the event for later use
-    deferredPrompt = e;
-    
-    // Show the button
-    if (installButton) {
+
+  // Function to update button visibility based on current state
+  const updateButtonVisibility = () => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (deferredInstallPromptEvent && !isStandalone) {
       installButton.style.display = 'block';
-    }
-  });
-  
-  // Set up click handler if button exists
-  if (installButton) {
-    installButton.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      
-      // Disable button during prompt
-      installButton.setAttribute('disabled', 'true');
-      
-      // Show the prompt
-      deferredPrompt.prompt();
-      
-      // Wait for user choice
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response: ${outcome}`);
-      
-      // Reset the button
-      installButton.removeAttribute('disabled');
-      
-      if (outcome === 'accepted') {
-        // Hide button after installation
-        installButton.style.display = 'none';
-      }
-      
-      // Clear the prompt
-      deferredPrompt = null;
-    });
-  }
-  
-  // Hide button when app is installed
-  window.addEventListener('appinstalled', () => {
-    console.log('PWA was installed');
-    if (installButton) {
+      console.log('PWA_INSTALL: Install button VISIBLE.');
+    } else {
       installButton.style.display = 'none';
+      console.log(`PWA_INSTALL: Install button HIDDEN. Standalone: ${isStandalone}, Prompt available: ${!!deferredInstallPromptEvent}`);
     }
-    deferredPrompt = null;
+  };
+
+  // Initially hide the button, then update based on current conditions
+  installButton.style.display = 'none';
+  // Check current status on initialization (e.g. if already standalone or prompt was captured before this call)
+  updateButtonVisibility(); 
+
+  if (installPromptListenersAttached) {
+    console.log('PWA_INSTALL: Listeners already attached. Button visibility updated.');
+    return; // Avoid re-attaching listeners
+  }
+
+  console.log('PWA_INSTALL: Setting up PWA install prompt event listeners.');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('PWA_INSTALL: beforeinstallprompt event fired.');
+    // Prevent the browser's default install prompt on some devices
+    e.preventDefault();
+    // Store the event so it can be triggered later
+    deferredInstallPromptEvent = e;
+    // Update the visibility of the install button
+    updateButtonVisibility();
   });
+
+  installButton.addEventListener('click', async () => {
+    console.log('PWA_INSTALL: Install button clicked.');
+    if (!deferredInstallPromptEvent) {
+      console.log('PWA_INSTALL: No deferred install prompt available to show.');
+      return;
+    }
+
+    // Disable button to prevent multiple clicks while the prompt is open
+    installButton.setAttribute('disabled', 'true');
+    console.log('PWA_INSTALL: Install button disabled.');
+
+    try {
+      // Show the install prompt
+      deferredInstallPromptEvent.prompt();
+      console.log('PWA_INSTALL: Install prompt shown to user.');
+
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredInstallPromptEvent.userChoice;
+      console.log(`PWA_INSTALL: User choice for PWA install: ${outcome}`);
+
+      if (outcome === 'accepted') {
+        console.log('PWA_INSTALL: User accepted the PWA installation.');
+        // The 'appinstalled' event will handle hiding the button and clearing the prompt event.
+      } else {
+        console.log('PWA_INSTALL: User dismissed the PWA installation.');
+        // If dismissed, do not clear deferredInstallPromptEvent here immediately.
+        // Some browsers might invalidate it, others might allow re-prompting.
+        // A new 'beforeinstallprompt' event will overwrite it if one occurs.
+      }
+    } catch (error) {
+      console.error('PWA_INSTALL: Error during PWA install prompt:', error);
+    } finally {
+      // Re-enable the button regardless of the outcome
+      installButton.removeAttribute('disabled');
+      console.log('PWA_INSTALL: Install button re-enabled.');
+      // Update button visibility, as the prompt might not be available anymore (especially if dismissed)
+      // or app might be in the process of being installed.
+      updateButtonVisibility();
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA_INSTALL: appinstalled event fired. PWA has been installed.');
+    // Clear the stored event
+    deferredInstallPromptEvent = null;
+    // Update the button visibility (it should hide)
+    updateButtonVisibility();
+  });
+
+  installPromptListenersAttached = true;
+  console.log('PWA_INSTALL: PWA install prompt listeners successfully attached.');
 };
 
 export const checkOnlineStatus = () => {

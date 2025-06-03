@@ -79,8 +79,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 }) => {
   const t = getTranslations(language);
   const buttonState = getButtonState(voiceState.status, isWaitingForClick, t);
-  // Only disable the button when not in idle or waiting for click states
-  const isDisabled = disabled || (voiceState.status !== 'idle' && !isWaitingForClick);
+  // Only disable the button when not in idle, recording, or waiting for click states
+  const isDisabled = disabled || (voiceState.status !== 'idle' && voiceState.status !== 'recording' && !isWaitingForClick);
 
   return (
     <div className="flex flex-col items-center space-y-2 sm:space-y-3">
@@ -90,9 +90,12 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
         className={cn(
           'w-24 h-24 sm:w-28 sm:h-28 rounded-full transition-all duration-200 relative',
           buttonState.color,
-          buttonState.pulse && 'animate-slow-pulse',
+          buttonState.pulse && voiceState.status !== 'recording' && 'animate-slow-pulse',
           isDisabled && 'opacity-70 cursor-not-allowed'
         )}
+        style={voiceState.status === 'recording' ? {
+          animation: 'fadeInOut 10s ease-in-out infinite'
+        } : undefined}
       >
         <div style={{ position: 'absolute', top: '5%', left: '5%', width: '90%', height: '90%' }}>
           {/* Single large microphone icon */}
